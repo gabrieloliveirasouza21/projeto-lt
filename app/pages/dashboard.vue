@@ -13,6 +13,10 @@ definePageMeta({
   ]
 })
 
+useHead({
+    title: 'Dashboard'
+})
+
 // --- Lógica de Dados (Mantida) ---
 interface ApiResponse {
     statusCode: number;

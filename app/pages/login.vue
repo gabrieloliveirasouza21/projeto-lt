@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { useAuth } from '~/composables/useAuth';
 
+useHead({
+    title: 'Login'
+})
+
 const { login } = useAuth();
 const router = useRouter();
 
