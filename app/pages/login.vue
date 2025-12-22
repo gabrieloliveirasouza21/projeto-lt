@@ -39,8 +39,8 @@ const handleLogin = async () => {
         <div class="login-card">
             
             <div class="card-header">
-                <h1 class="title">Bem-vindo</h1>
-                <p class="subtitle">Acesse o sistema para continuar</p>
+                <h1 class="title">Dashboard Nanocosmo</h1>
+                <p class="subtitle">Faça Login Para Continuar</p>
             </div>
 
             <form @submit.prevent="handleLogin" class="login-form">
