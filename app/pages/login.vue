@@ -7,7 +7,6 @@ useHead({
 
 const { login } = useAuth();
 const router = useRouter();
-
 // Estado para feedback visual
 const isLoading = ref(false)
 const errorMessage = ref('')
