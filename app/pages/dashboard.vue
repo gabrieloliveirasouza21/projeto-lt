@@ -121,46 +121,16 @@ let dataTimer: ReturnType<typeof setInterval>
 let countdownTimer: ReturnType<typeof setInterval>
 
 onMounted(async () => {
-    // 1. Busca os dados
-    const resposta: any = await $fetch('/api/resultado');
-    
-    // 👇 AJUSTE 1: Verificamos o caminho correto (data -> result)
-    if (resposta && resposta.data && resposta.data.result) {
-        
-        const listaDeSorteios = resposta.data.result;
+    // 1. Chamamos o "Motor" (Busca novos jogos + Faz a Faxina) ⚙️
+    // Não precisamos guardar o resultado em variável se não for usar, mas tem que chamar!
+    await $fetch('/api/resultado');
 
-        // 👇 AJUSTE 2: O Primeiro Loop (passa por cada horário/sorteio)
-        listaDeSorteios.forEach((sorteio: any) => {
-            
-            // Pegamos os prêmios DENTRO desse sorteio específico
-            const premiosDoSorteio = sorteio.prizes;
+    // 2. Chamamos as "Estatísticas" (Lê os dados atualizados) 📊
+    const respostaEstatisticas: any = await $fetch('/api/estatisticas');
 
-            if (premiosDoSorteio) {
-                // 👇 AJUSTE 3: O Segundo Loop (sua lógica antiga entra aqui)
-                premiosDoSorteio.forEach((premio: any) => {
-                    const { group } = premio;
-                    
-                    if (group) {
-                        const numero = Number(group.trim().split(' ')[0]);
-
-                        // Lógica de contagem no placar
-                        if (!placar.value[numero]) {
-                            placar.value[numero] = 1;
-                        } else {
-                            placar.value[numero] += 1;
-                        }
-                    }
-                });
-            }
-        });
-
-        // 3. Ordenar e pegar o Top 5 (isso continua igual fora dos loops)
-        const listaCompleta = Object.entries(placar.value);
-        listaCompleta.sort((a: any, b: any) => b[1] - a[1]);
-        
-        cinco_primeiros_num.value = listaCompleta.slice(0, 5);
-        cinco_ultimos_num.value = listaCompleta.slice(-5).reverse();
-        console.log(cinco_primeiros_num.value);
+    if (respostaEstatisticas) {
+        cinco_primeiros_num.value = respostaEstatisticas.quentes;
+        cinco_ultimos_num.value = respostaEstatisticas.frios;
     }
 });
 
@@ -232,14 +202,14 @@ onUnmounted(() => {
                     </div>
                 </div>
             </div>
-            
+
             <div class="top-numbers-section" v-if="cinco_primeiros_num.length > 0">
                 <h3 class="section-title">Mais Sorteados (Top 5) 🔥</h3>
                 <div class="balls-container">
                     <div v-for="(item, index) in cinco_primeiros_num" :key="index" class="ball-wrapper">
-                        <div class="lottery-ball hot-ball"> {{ item[0] }}
+                        <div class="lottery-ball hot-ball"> {{ item.numero }}
                         </div>
-                        <span class="ball-count">{{ item[1] }}x</span>
+                        <span class="ball-count">{{ item.total }}x</span>
                     </div>
                 </div>
             </div>
@@ -249,9 +219,9 @@ onUnmounted(() => {
                 <div class="balls-container">
                     <div v-for="(item, index) in cinco_ultimos_num" :key="index" class="ball-wrapper">
                         <div class="lottery-ball cold-ball">
-                            {{ item[0] }}
+                            {{ item.numero }}
                         </div>
-                        <span class="ball-count">{{ item[1] }}x</span>
+                        <span class="ball-count">{{ item.total }}x</span>
                     </div>
                 </div>
             </div>

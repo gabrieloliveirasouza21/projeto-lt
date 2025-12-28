@@ -1,4 +1,5 @@
 import CryptoJS from 'crypto-js'
+import sql from '../utils/db' // 🆕 1. Importamos nosso banco
 
 export default defineEventHandler(async (event) => {
     const hoje = new Date()
@@ -12,9 +13,8 @@ export default defineEventHandler(async (event) => {
     if (!token) {
         return { erro: 'Não foi possível autenticar o robô.' }
     }
-    // 2. URL com a variável injetada
+    
     const targetUrl = `https://xd5h02qsge.execute-api.us-east-1.amazonaws.com/resultados/prognosticos-aberto?produto=BT&loteria=BT&dtEnd=${dataDinamica}&aovivo=true`
-
     const secretKey = 'TRAA(o)DdVAKLJJ134nbHUASHUljkjMB6243@!.4'
 
     try {
@@ -36,31 +36,85 @@ export default defineEventHandler(async (event) => {
             "body": null,
             "method": "GET"
         });
-        // Na sua imagem, o texto criptografado estava dentro de 'data'
-        // Ex: { success: true, data: "U2FsdGVk..." }
+
         const encryptedMessage = response.data
-        // console.log('RESPOSTA DO SITE:', JSON.stringify(response, null, 2))
         if (!encryptedMessage) {
             throw new Error('Não encontrei dados criptografados na resposta.')
         }
 
-        // 3. A Mágica do Hacker Ético (Descriptografar) 🔓
         const bytes = CryptoJS.AES.decrypt(encryptedMessage, secretKey)
-
-        // O resultado sai em Bytes, precisamos converter para Texto (Utf8)
         const decryptedText = bytes.toString(CryptoJS.enc.Utf8)
 
-        // Se a senha estiver errada ou o dado corrompido, decryptedText vem vazio
         if (!decryptedText) {
             throw new Error('Falha na descriptografia. A chave pode ter mudado.')
         }
 
-        // 4. Transformamos o texto (String) em Objeto JavaScript (JSON)
-        const jsonResult = JSON.parse(decryptedText)
+       const jsonResult = JSON.parse(decryptedText)
+
+        // 👇 RASTREADOR 1: Ver se decriptou certo
+        console.log('🔓 DADOS DECRIPTADOS (Início):', jsonResult ? 'Sucesso' : 'Vazio');
+
+        // --- 🆕 AQUI COMEÇA A PARTE DE SALVAR NO BANCO ---
+        console.log('🧹 Iniciando limpeza de dados antigos...');
+        await sql`
+            DELETE FROM historico_numeros 
+            WHERE data_sorteio < NOW() - INTERVAL '30 days'
+        `;
+
+        if (jsonResult && jsonResult.result) {
+            const listaSorteios = jsonResult.result;
+            
+            console.log('🔢 Sorteios encontrados:', listaSorteios.length);
+
+            for (const sorteio of listaSorteios) {
+                // ... (o resto do código aqui dentro continua igual) ...
+                
+                // Só para garantir, vou repetir o trecho interno para você não se perder:
+                const [dataPt, hora] = sorteio.dataDrawn.split(' '); 
+                const [dia, mes, ano] = dataPt.split('/');
+                const dataFormatada = `${ano}-${mes}-${dia} ${hora}`;
+                const dataFinal = dataFormatada + '+00';
+                if (sorteio.prizes) {
+                    for (const premio of sorteio.prizes) {
+                        if (premio.group) {
+                            const numero = Number(premio.group.trim().split(' ')[0]);
+
+                           console.log(`💾 Verificando: Bicho ${numero} em ${dataFinal}`);
+
+                            try {
+                                // 1. Verifica se já existe (usando a data com +00)
+                                const jaExiste = await sql`
+                                    SELECT id FROM historico_numeros 
+                                    WHERE numero = ${numero} 
+                                    AND data_sorteio = ${dataFinal}
+                                `;
+
+                                // 2. Se não existe, salva (usando a data com +00)
+                                if (jaExiste.length === 0) {
+                                    await sql`
+                                        INSERT INTO historico_numeros (numero, data_sorteio)
+                                        VALUES (${numero}, ${dataFinal})
+                                    `;
+                                    console.log('✅ Salvo com sucesso!');
+                                } else {
+                                    console.log('⏭️ Registro duplicado, pulando...');
+                                }
+                                
+                            } catch (dbError) {
+                                console.error('❌ ERRO NO BANCO:', dbError);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+             console.log('⚠️ Estrutura de dados inesperada:', jsonResult);
+        }
+        // --- 🆕 FIM DA PARTE DE SALVAR ---
 
         return {
             success: true,
-            original_encrypted: false, // Só pra gente saber que foi tratado
+            original_encrypted: false,
             data: jsonResult
         }
 
