@@ -50,12 +50,6 @@ export default defineEventHandler(async (event) => {
         }
 
        const jsonResult = JSON.parse(decryptedText)
-
-        // 👇 RASTREADOR 1: Ver se decriptou certo
-        console.log('🔓 DADOS DECRIPTADOS (Início):', jsonResult ? 'Sucesso' : 'Vazio');
-
-        // --- 🆕 AQUI COMEÇA A PARTE DE SALVAR NO BANCO ---
-        console.log('🧹 Iniciando limpeza de dados antigos...');
         await sql`
             DELETE FROM historico_numeros 
             WHERE data_sorteio < NOW() - INTERVAL '30 days'
@@ -63,13 +57,8 @@ export default defineEventHandler(async (event) => {
 
         if (jsonResult && jsonResult.result) {
             const listaSorteios = jsonResult.result;
-            
-            console.log('🔢 Sorteios encontrados:', listaSorteios.length);
 
             for (const sorteio of listaSorteios) {
-                // ... (o resto do código aqui dentro continua igual) ...
-                
-                // Só para garantir, vou repetir o trecho interno para você não se perder:
                 const [dataPt, hora] = sorteio.dataDrawn.split(' '); 
                 const [dia, mes, ano] = dataPt.split('/');
                 const dataFormatada = `${ano}-${mes}-${dia} ${hora}`;
@@ -78,8 +67,6 @@ export default defineEventHandler(async (event) => {
                     for (const premio of sorteio.prizes) {
                         if (premio.group) {
                             const numero = Number(premio.group.trim().split(' ')[0]);
-
-                           console.log(`💾 Verificando: Bicho ${numero} em ${dataFinal}`);
 
                             try {
                                 // 1. Verifica se já existe (usando a data com +00)
@@ -95,22 +82,20 @@ export default defineEventHandler(async (event) => {
                                         INSERT INTO historico_numeros (numero, data_sorteio)
                                         VALUES (${numero}, ${dataFinal})
                                     `;
-                                    console.log('✅ Salvo com sucesso!');
                                 } else {
-                                    console.log('⏭️ Registro duplicado, pulando...');
+                                    // console.log('⏭️ Registro duplicado, pulando...');
                                 }
                                 
                             } catch (dbError) {
-                                console.error('❌ ERRO NO BANCO:', dbError);
+                                // console.error('ERRO NO BANCO:', dbError);
                             }
                         }
                     }
                 }
             }
         } else {
-             console.log('⚠️ Estrutura de dados inesperada:', jsonResult);
+            //  console.log('⚠️ Estrutura de dados inesperada:', jsonResult);
         }
-        // --- 🆕 FIM DA PARTE DE SALVAR ---
 
         return {
             success: true,
