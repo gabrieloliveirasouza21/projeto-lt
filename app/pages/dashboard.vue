@@ -17,7 +17,6 @@ useHead({
     title: 'Dashboard'
 })
 
-// --- Lógica de Dados (Mantida) ---
 interface ApiResponse {
     statusCode: number;
     statusInfo: string;
@@ -29,28 +28,23 @@ interface ApiResponse {
 
 const config = useRuntimeConfig()
 const { token, logout } = useAuth()
-const placar: any = ref({});
-const cinco_primeiros_num: any = ref([]);
-const cinco_ultimos_num: any = ref([])
 const estatisticas: any = ref({
     dia: { quentes: [], frios: [] },
     semana: { quentes: [], frios: [] },
     mes: { quentes: [], frios: [] }
 })
 
-// --- Lógica do Timer e Sorteios ---
 const drawTimes = [
     "11:20", "12:20", "13:20", "14:20",
     "18:20", "19:20", "20:20", "21:20", "22:20", "23:20"
 ];
 
-const timeRemaining = ref(0); // Em milissegundos
+const timeRemaining = ref(0);
 
 const updateTimer = () => {
     const now = new Date();
     let nextDrawDate: Date | null = null;
 
-    // 1. Procura o próximo horário HOJE
     for (const timeStr of drawTimes) {
         const [h = 0, m] = timeStr.split(':').map(Number);
         const drawDate = new Date();
@@ -62,7 +56,6 @@ const updateTimer = () => {
         }
     }
 
-    // 2. Se não achou hoje, pega o primeiro de AMANHÃ
     if (!nextDrawDate) {
         const [h = 0, m] = drawTimes[0]!.split(':').map(Number);
         nextDrawDate = new Date();
@@ -70,13 +63,11 @@ const updateTimer = () => {
         nextDrawDate.setHours(h, m, 0, 0);
     }
 
-    // 3. Calcula a diferença
     const diff = nextDrawDate.getTime() - now.getTime();
     timeRemaining.value = Math.max(0, diff);
     //   timeRemaining.value = 4000;
 }
 
-// Formatação (Minutos e Segundos)
 const formattedMinutes = computed(() => {
     const minutes = Math.floor(timeRemaining.value / 60000);
     return minutes.toString().padStart(2, '0');
@@ -87,13 +78,11 @@ const formattedSeconds = computed(() => {
     return seconds.toString().padStart(2, '0');
 });
 
-// Lógica da Urgência (Faltam menos de 5 segundos?)
 const isUrgent = computed(() => {
     return timeRemaining.value > 0 && timeRemaining.value <= 5000;
 });
 
 
-// --- Fetch de Dados da API (Mantido) ---
 const getFormattedDateUTC = (date: Date) => {
     return date.toISOString().slice(0, 16)
 }
@@ -121,7 +110,6 @@ const totalViews = computed(() => {
     return apiData.value.data.reduce((acc, item) => acc + (item.views || 0), 0)
 })
 
-// --- Ciclo de Vida ---
 let dataTimer: ReturnType<typeof setInterval>
 let countdownTimer: ReturnType<typeof setInterval>
 
@@ -142,12 +130,9 @@ onMounted(async () => {
 
 onMounted(() => {
     updateTimeWindow();
-    updateTimer(); // Roda imediatamente
+    updateTimer(); 
 
-    // Atualiza dados a cada 30s
     dataTimer = setInterval(updateTimeWindow, 30000);
-
-    // Atualiza o relógio a cada 1 segundo (1000ms)
     countdownTimer = setInterval(updateTimer, 1000);
 })
 
@@ -276,17 +261,15 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Layout Principal */
+
 .dashboard-wrapper {
     max-width: 1000px;
     margin: 0 auto;
     padding: 3rem 1.5rem;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: white;
-    /* Texto base branco para o cabeçalho */
 }
 
-/* Cabeçalho com Timer */
 .dashboard-header {
     display: flex;
     justify-content: space-between;
@@ -311,7 +294,6 @@ onUnmounted(() => {
     font-size: 1.1rem;
 }
 
-/* Timer Container */
 .timer-container {
     background: rgba(255, 255, 255, 0.1);
     padding: 0.5rem 1.5rem;
@@ -325,13 +307,9 @@ onUnmounted(() => {
 
 .stats-row {
     display: flex;
-    /* Ativa o modo flexível */
     justify-content: center;
-    /* Centraliza as colunas na tela */
     gap: 2rem;
-    /* Espaço entre as colunas */
     flex-wrap: wrap;
-    /* Permite quebrar linha se a tela for pequena (celular) */
     margin-top: 2rem;
 }
 
@@ -349,7 +327,6 @@ onUnmounted(() => {
     color: #fff;
 }
 
-/* --- A MÁGICA DOS CARTÕES BRANCOS --- */
 .dashboard-grid {
     display: grid;
     gap: 2rem;
@@ -357,12 +334,10 @@ onUnmounted(() => {
 }
 
 .card {
-    /* Isso aqui é o que faz o texto aparecer! Fundo branco quase opaco */
     background: rgba(255, 255, 255, 0.95);
     border-radius: 16px;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     color: #334155;
-    /* Texto escuro dentro do cartão branco */
     overflow: hidden;
 }
 
@@ -390,7 +365,6 @@ onUnmounted(() => {
     align-items: center;
 }
 
-/* Tipografia dos Números */
 .stat-value {
     font-size: 5rem;
     line-height: 1;
@@ -406,7 +380,6 @@ onUnmounted(() => {
     color: #64748b;
 }
 
-/* Lista */
 .system-list {
     list-style: none;
     padding: 0;
@@ -429,19 +402,15 @@ onUnmounted(() => {
     font-weight: 700;
 }
 
-/* Animação Urgente (Pulse Vermelho) */
 .urgent-pulse {
     background-color: #ef4444 !important;
-    /* Força o vermelho */
     border-color: #f87171;
     box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
     animation: pulse 0.5s infinite alternate;
 }
 
-/* Botão de Sair (Estilo Glass) */
 .logout-btn {
     background: rgba(255, 255, 255, 0.1);
-    /* Fundo transparente igual ao timer */
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
     padding: 0.5rem 1.2rem;
@@ -451,25 +420,18 @@ onUnmounted(() => {
     font-size: 0.9rem;
     transition: all 0.2s ease;
     margin-left: 1rem;
-    /* Dá um espacinho se estiver colado em algo */
 }
 
-/* Efeito ao passar o mouse */
 .logout-btn:hover {
     background: rgba(255, 255, 255, 0.2);
-    /* Fica um pouco mais branco */
     transform: translateY(-2px);
-    /* Sobe levemente */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Container da nova seção */
 .top-numbers-section {
     margin-top: 2rem;
-    /* Espaço entre os cards e as bolas */
     text-align: center;
     background: rgba(255, 255, 255, 0.05);
-    /* Fundo sutil */
     padding: 1.5rem;
     border-radius: 12px;
 }
@@ -481,13 +443,10 @@ onUnmounted(() => {
     font-weight: 600;
 }
 
-/* Flexbox para alinhar as bolinhas lado a lado */
 .balls-container {
     display: flex;
     justify-content: center;
-    /* Centraliza no meio da tela */
     gap: 1.5rem;
-    /* Espaço entre as bolinhas */
     flex-wrap: wrap;
 }
 
@@ -497,29 +456,23 @@ onUnmounted(() => {
     align-items: center;
 }
 
-/* O Estilo da Bolinha */
 .lottery-ball {
     width: 60px;
     height: 60px;
     background-color: #fff;
-    /* Fundo branco */
     color: #333;
-    /* Texto escuro */
     border-radius: 50%;
-    /* Faz virar um círculo perfeito */
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
     font-weight: 800;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    /* Sombra para dar volume 3D */
     transition: transform 0.2s;
 }
 
 .lottery-ball:hover {
     transform: scale(1.1);
-    /* Efeito legal ao passar o mouse */
 }
 
 .ball-count {
@@ -530,37 +483,26 @@ onUnmounted(() => {
 
 .logout-btn:active {
     transform: translateY(0);
-    /* Volta ao normal ao clicar */
 }
 
-/* ... (Seus estilos anteriores continuam aqui) ... */
-
-/* Ajuste para separar as seções */
 .cold-section {
     margin-top: 1.5rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 1.5rem;
 }
 
-/* 🔥 ESTILO QUENTE */
 .hot-ball {
     border: 3px solid #ff4500;
-    /* Laranja Fogo */
     color: #333;
     box-shadow: 0 0 15px rgba(255, 69, 0, 0.4);
-    /* Brilho laranja */
 }
 
-/* ❄️ ESTILO FRIO */
 .cold-ball {
     border: 3px solid #00bfff;
-    /* Azul Gelo */
     color: #333;
     box-shadow: 0 0 15px rgba(0, 191, 255, 0.4);
-    /* Brilho azul */
 }
 
-/* Efeito ao passar o mouse */
 .hot-ball:hover {
     transform: scale(1.1);
     background-color: #fff5f0;
@@ -578,32 +520,23 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: center;
     background: #1e293b;
-    /* Uma cor de fundo leve se quiser destacar a coluna */
     padding: 1rem;
     border-radius: 12px;
     min-width: 250px;
-    /* Garante que a coluna não fique muito magrinha */
 }
 
 .balls-row {
     display: flex;
-    /* Isso coloca as bolinhas lado a lado! */
     justify-content: center;
-    /* Centraliza o grupo */
     gap: 0.5rem;
-    /* Espaço entre cada bolinha */
     margin-bottom: 1rem;
-    /* Espaço entre a fileira Quente e a Fria */
 }
 
 .balls-row .lottery-ball {
     width: 40px;
-    /* Tamanho menor (padrão costuma ser maior) */
     height: 40px;
     font-size: 1.1rem;
-    /* Ajusta o texto */
     line-height: 40px;
-    /* Centraliza o texto verticalmente */
 }
 
 @keyframes pulse {
