@@ -32,6 +32,11 @@ const { token, logout } = useAuth()
 const placar: any = ref({});
 const cinco_primeiros_num: any = ref([]);
 const cinco_ultimos_num: any = ref([])
+const estatisticas: any = ref({
+    dia: { quentes: [], frios: [] },
+    semana: { quentes: [], frios: [] },
+    mes: { quentes: [], frios: [] }
+})
 
 // --- Lógica do Timer e Sorteios ---
 const drawTimes = [
@@ -120,49 +125,20 @@ const totalViews = computed(() => {
 let dataTimer: ReturnType<typeof setInterval>
 let countdownTimer: ReturnType<typeof setInterval>
 
-onMounted(async () => {
-    // 1. Busca os dados
-    const resposta: any = await $fetch('/api/resultado');
+const atualizarDados = async () => {
+    await $fetch('/api/resultado');
+    const resposta = await $fetch('/api/estatisticas');
     
-    // 👇 AJUSTE 1: Verificamos o caminho correto (data -> result)
-    if (resposta && resposta.data && resposta.data.result) {
-        
-        const listaDeSorteios = resposta.data.result;
-
-        // 👇 AJUSTE 2: O Primeiro Loop (passa por cada horário/sorteio)
-        listaDeSorteios.forEach((sorteio: any) => {
-            
-            // Pegamos os prêmios DENTRO desse sorteio específico
-            const premiosDoSorteio = sorteio.prizes;
-
-            if (premiosDoSorteio) {
-                // 👇 AJUSTE 3: O Segundo Loop (sua lógica antiga entra aqui)
-                premiosDoSorteio.forEach((premio: any) => {
-                    const { group } = premio;
-                    
-                    if (group) {
-                        const numero = Number(group.trim().split(' ')[0]);
-
-                        // Lógica de contagem no placar
-                        if (!placar.value[numero]) {
-                            placar.value[numero] = 1;
-                        } else {
-                            placar.value[numero] += 1;
-                        }
-                    }
-                });
-            }
-        });
-
-        // 3. Ordenar e pegar o Top 5 (isso continua igual fora dos loops)
-        const listaCompleta = Object.entries(placar.value);
-        listaCompleta.sort((a: any, b: any) => b[1] - a[1]);
-        
-        cinco_primeiros_num.value = listaCompleta.slice(0, 5);
-        cinco_ultimos_num.value = listaCompleta.slice(-5).reverse();
-        console.log(cinco_primeiros_num.value);
+    if (resposta) {
+        estatisticas.value = resposta;
     }
+
+}
+onMounted(async () => {
+    await atualizarDados();
+    setInterval(atualizarDados, 600 * 1000);
 });
+
 
 onMounted(() => {
     updateTimeWindow();
@@ -232,27 +208,64 @@ onUnmounted(() => {
                     </div>
                 </div>
             </div>
-            
-            <div class="top-numbers-section" v-if="cinco_primeiros_num.length > 0">
-                <h3 class="section-title">Mais Sorteados (Top 5) 🔥</h3>
-                <div class="balls-container">
-                    <div v-for="(item, index) in cinco_primeiros_num" :key="index" class="ball-wrapper">
-                        <div class="lottery-ball hot-ball"> {{ item[0] }}
-                        </div>
-                        <span class="ball-count">{{ item[1] }}x</span>
-                    </div>
-                </div>
-            </div>
 
-            <div class="top-numbers-section cold-section" v-if="cinco_ultimos_num.length > 0">
-                <h3 class="section-title">Menos Sorteados (Frios) ❄️</h3>
-                <div class="balls-container">
-                    <div v-for="(item, index) in cinco_ultimos_num" :key="index" class="ball-wrapper">
-                        <div class="lottery-ball cold-ball">
-                            {{ item[0] }}
+            <div class="stats-row">
+
+                <div class="column-day">
+                    <h3>Hoje</h3>
+
+                    <div class="balls-row">
+                        <div v-for="item in estatisticas.dia.quentes" :key="item.numero" class="ball-wrapper">
+                            <div class="lottery-ball hot-ball">{{ item.numero }}</div>
+                            <span class="ball-count">{{ item.total }}x</span>
                         </div>
-                        <span class="ball-count">{{ item[1] }}x</span>
                     </div>
+
+                    <div class="balls-row">
+                        <div v-for="item in estatisticas.dia.frios" :key="item.numero" class="ball-wrapper">
+                            <div class="lottery-ball cold-ball">{{ item.numero }}</div>
+                            <span class="ball-count">{{ item.total }}x</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="column-week">
+                    <h3>Semana</h3>
+
+                    <div class="balls-row">
+                        <div v-for="item in estatisticas.semana.quentes" :key="item.numero" class="ball-wrapper">
+                            <div class="lottery-ball hot-ball">{{ item.numero }}</div>
+                            <span class="ball-count">{{ item.total }}x</span>
+                        </div>
+                    </div>
+
+                    <div class="balls-row">
+                        <div v-for="item in estatisticas.semana.frios" :key="item.numero" class="ball-wrapper">
+                            <div class="lottery-ball cold-ball">{{ item.numero }}</div>
+                            <span class="ball-count">{{ item.total }}x</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="column-month">
+                    <h3>Mês</h3>
+
+                    <div class="balls-row">
+                        <div v-for="item in estatisticas.mes.quentes" :key="item.numero" class="ball-wrapper">
+                            <div class="lottery-ball hot-ball">{{ item.numero }}</div>
+                            <span class="ball-count">{{ item.total }}x</span>
+                        </div>
+                    </div>
+
+                    <div class="balls-row">
+                        <div v-for="item in estatisticas.mes.frios" :key="item.numero" class="ball-wrapper">
+                            <div class="lottery-ball cold-ball">{{ item.numero }}</div>
+                            <span class="ball-count">{{ item.total }}x</span>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -308,6 +321,18 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: center;
     transition: all 0.3s ease;
+}
+
+.stats-row {
+    display: flex;
+    /* Ativa o modo flexível */
+    justify-content: center;
+    /* Centraliza as colunas na tela */
+    gap: 2rem;
+    /* Espaço entre as colunas */
+    flex-wrap: wrap;
+    /* Permite quebrar linha se a tela for pequena (celular) */
+    margin-top: 2rem;
 }
 
 .timer-label {
@@ -513,22 +538,26 @@ onUnmounted(() => {
 /* Ajuste para separar as seções */
 .cold-section {
     margin-top: 1.5rem;
-    border-top: 1px solid rgba(255,255,255,0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 1.5rem;
 }
 
 /* 🔥 ESTILO QUENTE */
 .hot-ball {
-    border: 3px solid #ff4500; /* Laranja Fogo */
+    border: 3px solid #ff4500;
+    /* Laranja Fogo */
     color: #333;
-    box-shadow: 0 0 15px rgba(255, 69, 0, 0.4); /* Brilho laranja */
+    box-shadow: 0 0 15px rgba(255, 69, 0, 0.4);
+    /* Brilho laranja */
 }
 
 /* ❄️ ESTILO FRIO */
 .cold-ball {
-    border: 3px solid #00bfff; /* Azul Gelo */
+    border: 3px solid #00bfff;
+    /* Azul Gelo */
     color: #333;
-    box-shadow: 0 0 15px rgba(0, 191, 255, 0.4); /* Brilho azul */
+    box-shadow: 0 0 15px rgba(0, 191, 255, 0.4);
+    /* Brilho azul */
 }
 
 /* Efeito ao passar o mouse */
@@ -540,6 +569,41 @@ onUnmounted(() => {
 .cold-ball:hover {
     transform: scale(1.1);
     background-color: #f0faff;
+}
+
+.column-day,
+.column-week,
+.column-month {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #1e293b;
+    /* Uma cor de fundo leve se quiser destacar a coluna */
+    padding: 1rem;
+    border-radius: 12px;
+    min-width: 250px;
+    /* Garante que a coluna não fique muito magrinha */
+}
+
+.balls-row {
+    display: flex;
+    /* Isso coloca as bolinhas lado a lado! */
+    justify-content: center;
+    /* Centraliza o grupo */
+    gap: 0.5rem;
+    /* Espaço entre cada bolinha */
+    margin-bottom: 1rem;
+    /* Espaço entre a fileira Quente e a Fria */
+}
+
+.balls-row .lottery-ball {
+    width: 40px;
+    /* Tamanho menor (padrão costuma ser maior) */
+    height: 40px;
+    font-size: 1.1rem;
+    /* Ajusta o texto */
+    line-height: 40px;
+    /* Centraliza o texto verticalmente */
 }
 
 @keyframes pulse {
