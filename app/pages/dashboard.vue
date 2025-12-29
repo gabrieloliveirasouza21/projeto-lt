@@ -124,7 +124,7 @@ const atualizarDados = async () => {
 }
 onMounted(async () => {
     await atualizarDados();
-    setInterval(atualizarDados, 600 * 1000);
+    setInterval(atualizarDados, 1800 * 1000);
 });
 
 
