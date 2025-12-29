@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Redireciona imediatamente para o login
+
 definePageMeta({
   middleware: [
     function (to, from) {

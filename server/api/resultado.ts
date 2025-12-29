@@ -69,21 +69,19 @@ export default defineEventHandler(async (event) => {
                             const numero = Number(premio.group.trim().split(' ')[0]);
 
                             try {
-                                // 1. Verifica se já existe (usando a data com +00)
                                 const jaExiste = await sql`
                                     SELECT id FROM historico_numeros 
                                     WHERE numero = ${numero} 
                                     AND data_sorteio = ${dataFinal}
                                 `;
 
-                                // 2. Se não existe, salva (usando a data com +00)
                                 if (jaExiste.length === 0) {
                                     await sql`
                                         INSERT INTO historico_numeros (numero, data_sorteio)
                                         VALUES (${numero}, ${dataFinal})
                                     `;
                                 } else {
-                                    // console.log('⏭️ Registro duplicado, pulando...');
+                                    // console.log('Registro duplicado');
                                 }
                                 
                             } catch (dbError) {
@@ -94,7 +92,7 @@ export default defineEventHandler(async (event) => {
                 }
             }
         } else {
-            //  console.log('⚠️ Estrutura de dados inesperada:', jsonResult);
+            //  console.log('Estrutura de dados inesperada:', jsonResult);
         }
 
         return {
